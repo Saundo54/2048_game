@@ -113,12 +113,32 @@ function canMove(grid) {
   return false;
 }
 
+function loadState() {
+  try {
+    const grid = JSON.parse(localStorage.getItem('2048-grid'));
+    const score = parseInt(localStorage.getItem('2048-score') || '0', 10);
+    const status = localStorage.getItem('2048-status') || 'playing';
+    const keepPlaying = localStorage.getItem('2048-keep-playing') === 'true';
+    if (grid) return { grid, score, status, keepPlaying };
+  } catch { /* ignore parse errors */ }
+  return null;
+}
+
+function saveState(grid, score, status, keepPlaying) {
+  const clean = grid.map(row => row.map(cell => ({ value: cell.value, state: 'idle' })));
+  localStorage.setItem('2048-grid', JSON.stringify(clean));
+  localStorage.setItem('2048-score', score);
+  localStorage.setItem('2048-status', status);
+  localStorage.setItem('2048-keep-playing', keepPlaying);
+}
+
 export function useGame() {
-  const [grid, setGrid] = useState(() => initGrid());
-  const [score, setScore] = useState(0);
+  const saved = loadState();
+  const [grid, setGrid] = useState(() => saved ? saved.grid : initGrid());
+  const [score, setScore] = useState(() => saved ? saved.score : 0);
   const [best, setBest] = useState(() => parseInt(localStorage.getItem('2048-best') || '0', 10));
-  const [status, setStatus] = useState('playing'); // 'playing' | 'won' | 'lost'
-  const [keepPlaying, setKeepPlaying] = useState(false);
+  const [status, setStatus] = useState(() => saved ? saved.status : 'playing');
+  const [keepPlaying, setKeepPlaying] = useState(() => saved ? saved.keepPlaying : false);
 
   const move = useCallback((direction) => {
     if (status === 'lost') return;
@@ -129,6 +149,9 @@ export function useGame() {
       if (!moved) return prev;
 
       const withTile = addRandomTile(newGrid);
+      const newStatus = (!keepPlaying && hasWon(withTile)) ? 'won'
+        : !canMove(withTile) ? 'lost'
+        : 'playing';
 
       setScore(s => {
         const next = s + gained;
@@ -137,15 +160,11 @@ export function useGame() {
           localStorage.setItem('2048-best', newBest);
           return newBest;
         });
+        saveState(withTile, next, newStatus, keepPlaying);
         return next;
       });
 
-      if (!keepPlaying && hasWon(withTile)) {
-        setStatus('won');
-      } else if (!canMove(withTile)) {
-        setStatus('lost');
-      }
-
+      setStatus(newStatus);
       return withTile;
     });
   }, [status, keepPlaying]);
@@ -153,13 +172,16 @@ export function useGame() {
   const continueGame = useCallback(() => {
     setKeepPlaying(true);
     setStatus('playing');
-  }, []);
+    setGrid(prev => { saveState(prev, score, 'playing', true); return prev; });
+  }, [score]);
 
   const restart = useCallback(() => {
-    setGrid(initGrid());
+    const fresh = initGrid();
+    setGrid(fresh);
     setScore(0);
     setStatus('playing');
     setKeepPlaying(false);
+    saveState(fresh, 0, 'playing', false);
   }, []);
 
   return { grid, score, best, status, move, restart, continueGame };
