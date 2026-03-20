@@ -116,7 +116,7 @@ function canMove(grid) {
 export function useGame() {
   const [grid, setGrid] = useState(() => initGrid());
   const [score, setScore] = useState(0);
-  const [best, setBest] = useState(0);
+  const [best, setBest] = useState(() => parseInt(localStorage.getItem('2048-best') || '0', 10));
   const [status, setStatus] = useState('playing'); // 'playing' | 'won' | 'lost'
   const [keepPlaying, setKeepPlaying] = useState(false);
 
@@ -132,7 +132,11 @@ export function useGame() {
 
       setScore(s => {
         const next = s + gained;
-        setBest(b => Math.max(b, next));
+        setBest(b => {
+          const newBest = Math.max(b, next);
+          localStorage.setItem('2048-best', newBest);
+          return newBest;
+        });
         return next;
       });
 
