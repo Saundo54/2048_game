@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 const SIZE = 4;
 
@@ -113,6 +113,26 @@ function canMove(grid) {
   return false;
 }
 
+function loadHistory() {
+  try {
+    const h = JSON.parse(localStorage.getItem('2048-history'));
+    if (Array.isArray(h)) return h;
+  } catch { /* ignore */ }
+  return [];
+}
+
+function saveHistory(history) {
+  localStorage.setItem('2048-history', JSON.stringify(history));
+}
+
+function recordEntry(history, score, won) {
+  if (score === 0) return history;
+  const entry = { score, date: new Date().toISOString(), won };
+  const updated = [entry, ...history].slice(0, 20);
+  saveHistory(updated);
+  return updated;
+}
+
 function loadState() {
   try {
     const grid = JSON.parse(localStorage.getItem('2048-grid'));
@@ -139,6 +159,8 @@ export function useGame() {
   const [best, setBest] = useState(() => parseInt(localStorage.getItem('2048-best') || '0', 10));
   const [status, setStatus] = useState(() => saved ? saved.status : 'playing');
   const [keepPlaying, setKeepPlaying] = useState(() => saved ? saved.keepPlaying : false);
+  const [history, setHistory] = useState(() => loadHistory());
+  const gameSaved = useRef(saved ? saved.status === 'won' || saved.status === 'lost' : false);
 
   const move = useCallback((direction) => {
     if (status === 'lost') return;
@@ -161,6 +183,10 @@ export function useGame() {
           return newBest;
         });
         saveState(withTile, next, newStatus, keepPlaying);
+        if ((newStatus === 'won' || newStatus === 'lost') && !gameSaved.current) {
+          gameSaved.current = true;
+          setHistory(h => recordEntry(h, next, newStatus === 'won'));
+        }
         return next;
       });
 
@@ -176,13 +202,19 @@ export function useGame() {
   }, [score]);
 
   const restart = useCallback(() => {
+    setScore(s => {
+      if (s > 0 && !gameSaved.current) {
+        setHistory(h => recordEntry(h, s, false));
+      }
+      gameSaved.current = false;
+      return 0;
+    });
     const fresh = initGrid();
     setGrid(fresh);
-    setScore(0);
     setStatus('playing');
     setKeepPlaying(false);
     saveState(fresh, 0, 'playing', false);
   }, []);
 
-  return { grid, score, best, status, move, restart, continueGame };
+  return { grid, score, best, status, move, restart, continueGame, history };
 }

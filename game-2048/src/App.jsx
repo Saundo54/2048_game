@@ -28,6 +28,36 @@ function getTileStyle(value) {
   };
 }
 
+function ScoreHistory({ history }) {
+  if (history.length === 0) {
+    return (
+      <div className="history-panel">
+        <h2 className="history-title">Score History</h2>
+        <p className="history-empty">No games recorded yet.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="history-panel">
+      <h2 className="history-title">Score History</h2>
+      <ol className="history-list">
+        {history.map((entry, i) => (
+          <li key={i} className="history-entry">
+            <span className="history-rank">#{i + 1}</span>
+            <span className="history-score">{entry.score.toLocaleString()}</span>
+            <span className={`history-badge ${entry.won ? 'badge-won' : 'badge-lost'}`}>
+              {entry.won ? 'Win' : 'Loss'}
+            </span>
+            <span className="history-date">
+              {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 function Tile({ value, state }) {
   const cls = state === 'new' ? ' tile--new' : state === 'merged' ? ' tile--merged' : '';
   return (
@@ -38,7 +68,7 @@ function Tile({ value, state }) {
 }
 
 export default function App() {
-  const { grid, score, best, status, move, restart, continueGame } = useGame();
+  const { grid, score, best, status, move, restart, continueGame, history } = useGame();
 
   const handleKey = useCallback((e) => {
     const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
@@ -95,33 +125,38 @@ export default function App() {
         <button className="btn-new" onClick={restart}>New Game</button>
       </div>
 
-      <div className="grid-wrapper">
-        <div className="grid">
-          {grid.flat().map((cell, i) => <Tile key={i} value={cell.value} state={cell.state} />)}
+      <div className="game-layout">
+        <div className="game-column">
+          <div className="grid-wrapper">
+            <div className="grid">
+              {grid.flat().map((cell, i) => <Tile key={i} value={cell.value} state={cell.state} />)}
+            </div>
+
+            {status === 'won' && (
+              <div className="overlay won">
+                <div className="overlay-content">
+                  <p>You win!</p>
+                  <div className="overlay-buttons">
+                    <button onClick={continueGame}>Keep going</button>
+                    <button onClick={restart}>New Game</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {status === 'lost' && (
+              <div className="overlay lost">
+                <div className="overlay-content">
+                  <p>Game over!</p>
+                  <button onClick={restart}>Try again</button>
+                </div>
+              </div>
+            )}
+          </div>
+          <p className="hint">Use arrow keys or swipe to move tiles</p>
         </div>
 
-        {status === 'won' && (
-          <div className="overlay won">
-            <div className="overlay-content">
-              <p>You win!</p>
-              <div className="overlay-buttons">
-                <button onClick={continueGame}>Keep going</button>
-                <button onClick={restart}>New Game</button>
-              </div>
-            </div>
-          </div>
-        )}
-        {status === 'lost' && (
-          <div className="overlay lost">
-            <div className="overlay-content">
-              <p>Game over!</p>
-              <button onClick={restart}>Try again</button>
-            </div>
-          </div>
-        )}
+        <ScoreHistory history={history} />
       </div>
-
-      <p className="hint">Use arrow keys or swipe to move tiles</p>
     </div>
   );
 }

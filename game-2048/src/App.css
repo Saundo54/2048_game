@@ -12,13 +12,110 @@ body {
 }
 
 .app {
-  max-width: 480px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 24px 16px 48px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   user-select: none;
+}
+
+.game-layout {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 16px;
+  align-items: start;
+}
+
+.game-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── History Sidebar ── */
+.history-panel {
+  background: #bbada0;
+  border-radius: 8px;
+  padding: 14px 12px;
+  color: #f9f6f2;
+}
+
+.history-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #eee4da;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.history-empty {
+  font-size: 0.8rem;
+  color: #eee4da;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.history-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.history-entry {
+  display: grid;
+  grid-template-columns: 22px 1fr auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+}
+
+.history-entry:nth-child(odd) {
+  background: rgba(0,0,0,0.08);
+}
+
+.history-rank {
+  color: #eee4da;
+  font-size: 0.7rem;
+}
+
+.history-score {
+  font-weight: 700;
+  color: #fff;
+}
+
+.history-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.badge-won  { background: #edc22e; color: #776e65; }
+.badge-lost { background: rgba(0,0,0,0.2); color: #eee4da; }
+
+.history-date {
+  font-size: 0.7rem;
+  color: #eee4da;
+  white-space: nowrap;
+}
+
+@media (max-width: 580px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .history-list {
+    max-height: 220px;
+  }
 }
 
 /* ── Header ── */
@@ -200,4 +297,14 @@ h1 {
   h1 { font-size: 3rem; }
   .tile { font-size: 1.8rem; }
   .overlay p { font-size: 2.2rem; }
+}
+
+@media (max-width: 580px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .history-list {
+    max-height: 220px;
+  }
 }
